@@ -118,7 +118,7 @@ describe("plugin", function() {
       this.plugin.resolve(this.result.request);
 
       expect(this.check.calls.length).toBe(1);
-      expect(this.check.calls[0].arguments).toEqual([this.result.request]);
+      expect(this.check.calls[0].arguments[0]).toEqual(this.result.request);
     });
 
     it("should return the value of the check", function() {
@@ -127,7 +127,7 @@ describe("plugin", function() {
       var result = this.plugin.resolve(this.result.request);
 
       expect(this.check.calls.length).toBe(1);
-      expect(this.check.calls[0].arguments).toEqual([this.result.request]);
+      expect(this.check.calls[0].arguments[0]).toEqual(this.result.request);
 
       expect(result).toEqual(this.result.request);
     });

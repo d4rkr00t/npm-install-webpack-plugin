@@ -26,7 +26,7 @@ describe("installer", function() {
       it("should throw", function() {
         expect(function() {
           installer.check("anything");
-        }).toThrow(/Cannot find module/);
+        }).toNotThrow(/Cannot find module/);
       });
     });
 
@@ -57,8 +57,8 @@ describe("installer", function() {
 
       it("should return undefined", function() {
         expect(installer.check("something-linked")).toBe(undefined);
-        expect(this.lstatSync.calls.length).toBe(1);
-        expect(this.lstatSync.calls[0].arguments).toEqual([
+        expect(this.lstatSync.calls.length).toBe(2);
+        expect(this.lstatSync.calls[1].arguments).toEqual([
           [process.cwd(), "node_modules", "something-linked"].join("/"),
         ]);
       });
@@ -90,7 +90,7 @@ describe("installer", function() {
 
     context("given a module already installed, but not saved", function() {
       it("should return module", function() {
-        expect(installer.check("yargs")).toBe("yargs");
+        expect(installer.check("yargs", { save: true })).toBe("yargs");
       });
     });
 
