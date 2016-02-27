@@ -27,7 +27,7 @@ NpmInstallPlugin.prototype.listenToFactory = function(factory) {
 };
 
 NpmInstallPlugin.prototype.resolve = function(request) {
-  var dep = installer.check(request);
+  var dep = installer.check(request, this.options);
 
   if (dep) {
     installer.install(dep, this.options);

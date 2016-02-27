@@ -7,12 +7,44 @@ var util = require("util");
 var INTERNAL = /^\./; // Match "./client", "../something", etc.
 var EXTERNAL = /^[a-z\-0-9]+$/; // Match "react", "path", "fs", etc.
 
-module.exports.check = function(request) {
+/**
+ * Checks whether or not we should search modules in node_modules directory.
+ *
+ * If node_modules doesn't exist should not search there.
+ * If both save and saveDev options disabled should search in node_modules.
+ * If package.json doesn't exists or dependencies and devDependencies are empty should search though.
+ *
+ * @param {Object} pkg
+ * @param {Object|undefined} pkg.dependencies
+ * @param {Object|undefined} pkg.devDependencies
+ * @param {Object} options
+ * @param {Boolean} isNodeModulesExists
+ * @return {Boolean}
+ */
+function isShouldCheckInNodeModules(pkg, options, isNodeModulesExists) {
+  if (!isNodeModulesExists) return;
+  if (!options.save && !options.saveDev) return true;
+
+  var deps = pkg.dependencies ? Object.keys(pkg.dependencies) : [];
+  var devDeps = pkg.devDependencies ? Object.keys(pkg.devDependencies) : [];
+
+  if (!deps && !devDeps) return true;
+}
+
+module.exports.check = function(request, options) {
+  options = options || {};
   var namespaced = request.charAt(0) === "@";
   var dep = request.split("/")
     .slice(0, namespaced ? 2 : 1)
     .join("/")
   ;
+  var pkg = {};
+  var nodeModulesDir = path.join(process.cwd(), "node_modules");
+  var isNodeModulesExists;
+
+  try {
+    isNodeModulesExists = fs.lstatSync(nodeModulesDir).isDirectory();
+  } catch (e) {}
 
   // Ignore relative modules, which aren't installed by NPM
   if (!dep.match(EXTERNAL) && !namespaced) {
@@ -26,7 +58,21 @@ module.exports.check = function(request) {
     // Remove cached copy for future checks
     delete require.cache[pkgPath];
   } catch(e) {
-    throw e;
+    // package.json doesn't exist
+  }
+
+  if (isShouldCheckInNodeModules(pkg, options, isNodeModulesExists)) {
+    var dirs = fs.readdirSync(nodeModulesDir);
+
+    pkg = {
+      dependencies: dirs.reduce(function(resultDeps, dir) {
+        if (dir !== '.') {
+          resultDeps[dir] = '*';
+        }
+
+        return resultDeps;
+      }, {})
+    };
   }
 
   var hasDep = pkg.dependencies && pkg.dependencies[dep];
