@@ -14,38 +14,31 @@ module.exports.check = function(request) {
     return;
   }
 
+  var nodeModulesDir = path.join(process.cwd(), "node_modules");
   var namespaced = request.charAt(0) === "@";
   var dep = request.split("/")
     .slice(0, namespaced ? 2 : 1)
-    .join("/")
-  ;
+    .join("/");
 
   // Ignore relative modules, which aren't installed by NPM
   if (!dep.match(EXTERNAL) && !namespaced) {
     return;
   }
 
-  try {
-    var pkgPath = require.resolve(path.join(process.cwd(), "package.json"));
-    var pkg = require(pkgPath);
-
-    // Remove cached copy for future checks
-    delete require.cache[pkgPath];
-  } catch(e) {
-    throw e;
-  }
-
-  var hasDep = pkg.dependencies && pkg.dependencies[dep];
-  var hasDevDep = pkg.devDependencies && pkg.devDependencies[dep];
-
   // Bail early if we've already installed this dependency
-  if (hasDep || hasDevDep) {
-    return;
+  try {
+    var stats = fs.lstatSync(path.join(nodeModulesDir, dep));
+
+    if (stats.isDirectory()) {
+      return;
+    }
+  } catch(e) {
+    // Module doesn't exist in node_modules
   }
 
   // Ignore linked modules
   try {
-    var stats = fs.lstatSync(path.join(process.cwd(), "node_modules", dep));
+    var stats = fs.lstatSync(path.join(nodeModulesDir, dep));
 
     if (stats.isSymbolicLink()) {
       return;
