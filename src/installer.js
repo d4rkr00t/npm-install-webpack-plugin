@@ -146,8 +146,18 @@ module.exports.install = function install(deps, options) {
   }
 
   var args = ["install"].concat(deps).filter(Boolean);
+  var pkgPath = require.resolve(path.join(process.cwd(), "package.json"));
+  var pkg = require(pkgPath);
 
-  args.push(options.dev ? "--save-dev" : "--save");
+  // Remove cached copy for future checks
+  delete require.cache[pkgPath];
+
+  // Save only if not yet in package.json
+  if (!deps.some(function(dep) {
+    return (pkg.dependencies && pkg.dependencies[dep]) || (pkg.devDependencies && pkg.devDependencies[dep]);
+  })) {
+    args.push(options.dev ? "--save-dev" : "--save");
+  }
 
   deps.forEach(function(dep) {
     console.info("Installing %s...", dep);
